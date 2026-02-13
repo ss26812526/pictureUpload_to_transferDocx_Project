@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useToast } from '../../composables/useToast';
 
 /**
  * 上傳區域組件
- * 支援點擊上傳和拖拽上傳
+ * 支援點擊上傳、拖拽上傳和剪貼簿貼上 (Ctrl+V)
  */
 const props = defineProps<{
   disabled?: boolean;
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   upload: [files: File[]];
 }>();
 
+const toast = useToast();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isDragging = ref(false);
 
@@ -61,6 +63,36 @@ function triggerFileInput() {
     fileInputRef.value?.click();
   }
 }
+
+// 處理剪貼簿貼上 (Ctrl+V)
+function handlePaste(event: ClipboardEvent) {
+  if (props.disabled) return;
+
+  const items = event.clipboardData?.items;
+  if (!items) return;
+
+  const imageFiles: File[] = [];
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) imageFiles.push(file);
+    }
+  }
+
+  if (imageFiles.length > 0) {
+    event.preventDefault();
+    emit('upload', imageFiles);
+    toast.success(`已從剪貼簿貼上 ${imageFiles.length} 張圖片`);
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('paste', handlePaste);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('paste', handlePaste);
+});
 </script>
 
 <template>
@@ -85,7 +117,7 @@ function triggerFileInput() {
     <div class="upload-content">
       <div class="upload-icon">📁</div>
       <p class="upload-text">點擊或拖拽圖片到此處上傳</p>
-      <p class="upload-hint">支援 JPG、PNG、GIF 等格式</p>
+      <p class="upload-hint">支援 JPG、PNG、GIF 等格式，也可使用 Ctrl+V 貼上截圖</p>
     </div>
   </div>
 </template>

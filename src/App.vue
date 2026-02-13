@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import ImageUploader from './components/ImageUploader/index.vue'
+import ToastContainer from './components/common/ToastContainer.vue'
 </script>
 
 <template>
   <div class="app">
     <ImageUploader />
   </div>
+  <ToastContainer />
 </template>
 
 <style scoped>

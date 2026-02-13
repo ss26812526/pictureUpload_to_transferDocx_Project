@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { UploadedImage, ExportOptions } from '../types';
 import { compressImage, getDataUrlSize } from '../utils/imageCompressor';
+import { useToast } from './useToast';
 
 /**
  * 圖片上傳與處理的組合式函數
@@ -9,6 +10,7 @@ import { compressImage, getDataUrlSize } from '../utils/imageCompressor';
 export function useImageUpload() {
   const images = ref<UploadedImage[]>([]);
   const isProcessing = ref(false);
+  const toast = useToast();
 
   /**
    * 處理上傳的檔案
@@ -19,6 +21,12 @@ export function useImageUpload() {
     isProcessing.value = true;
 
     const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      toast.warning('未偵測到圖片檔案，請選擇圖片格式的檔案');
+      isProcessing.value = false;
+      return;
+    }
 
     for (const file of imageFiles) {
       try {
@@ -50,9 +58,11 @@ export function useImageUpload() {
         });
       } catch (error) {
         console.error('處理圖片時發生錯誤:', error);
+        toast.error(`處理圖片「${file.name}」時發生錯誤`);
       }
     }
 
+    toast.success(`已成功上傳 ${imageFiles.length} 張圖片`);
     isProcessing.value = false;
   }
 

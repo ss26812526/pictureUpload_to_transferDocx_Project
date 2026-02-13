@@ -5,13 +5,16 @@ import {
   ImageRun,
   AlignmentType,
   TextRun,
+  Header,
+  PageOrientation,
+  convertMillimetersToTwip,
 } from 'docx';
 import { saveAs } from 'file-saver';
-import type { UploadedImage, ExportOptions } from '../types';
+import type { UploadedImage, ExportOptions, PageSize } from '../types';
 
 /**
  * DOCX 檔案生成器
- * 將圖片轉換為 DOCX 檔案，每張圖片自動命名為 "Figure 1"、"Figure 2" 等
+ * 將圖片轉換為 DOCX 檔案，支援自訂頁面尺寸、浮水印和圖片說明
  */
 
 /**
@@ -27,7 +30,7 @@ function getImageTypeFromDataUrl(dataUrl: string): 'jpg' | 'png' | 'gif' | 'bmp'
 /**
  * 將 Data URL 轉換為 Uint8Array
  */
-function dataUrlToUint8Array(dataUrl: string): Uint8Array {
+export function dataUrlToUint8Array(dataUrl: string): Uint8Array {
   const base64 = dataUrl.split(',')[1];
   if (!base64) {
     throw new Error('Invalid data URL format');
@@ -44,13 +47,8 @@ function dataUrlToUint8Array(dataUrl: string): Uint8Array {
 
 /**
  * 計算保持比例的圖片尺寸
- * @param originalWidth 原始寬度
- * @param originalHeight 原始高度
- * @param maxWidth 最大寬度
- * @param maxHeight 最大高度
- * @returns 調整後的寬高
  */
-function calculateAspectRatioDimensions(
+export function calculateAspectRatioDimensions(
   originalWidth: number,
   originalHeight: number,
   maxWidth: number,
@@ -61,19 +59,37 @@ function calculateAspectRatioDimensions(
   let width = originalWidth;
   let height = originalHeight;
 
-  // 如果寬度超過最大值，按寬度縮放
   if (width > maxWidth) {
     width = maxWidth;
     height = width / aspectRatio;
   }
 
-  // 如果高度還是超過最大值，按高度縮放
   if (height > maxHeight) {
     height = maxHeight;
     width = height * aspectRatio;
   }
 
   return { width, height };
+}
+
+/**
+ * 取得頁面尺寸（mm）
+ */
+function getPageDimensions(
+  pageSize: PageSize,
+  customWidth?: number,
+  customHeight?: number
+): { width: number; height: number } {
+  switch (pageSize) {
+    case 'A4':
+      return { width: 210, height: 297 };
+    case 'Letter':
+      return { width: 216, height: 279 };
+    case 'custom':
+      return { width: customWidth || 210, height: customHeight || 297 };
+    default:
+      return { width: 210, height: 297 };
+  }
 }
 
 /**
@@ -85,31 +101,33 @@ export async function generateDocx(
   images: UploadedImage[],
   options: ExportOptions
 ): Promise<void> {
-  const { maxWidth, maxHeight, maxPageHeight } = options;
+  const { maxWidth, maxHeight, maxPageHeight, watermarkText } = options;
+
+  // 取得頁面尺寸
+  const pageDims = getPageDimensions(
+    options.pageSize,
+    options.customPageWidth,
+    options.customPageHeight
+  );
 
   // 建立段落陣列
   const children: Paragraph[] = [];
 
   // 智能分頁：追蹤當前頁面累計高度
   let currentPageHeight = 0;
-  const captionHeight = 30; // Figure 標題估計高度
-  const spacing = 20; // 圖片間距
+  const captionHeight = 30;
+  const spacing = 20;
 
   // 為每張圖片建立段落
   for (let i = 0; i < images.length; i++) {
     const image = images[i];
-    if (!image) continue; // 跳過 undefined
+    if (!image) continue;
 
     const figureNumber = i + 1;
 
     try {
-      // 取得圖片類型
       const imageType = getImageTypeFromDataUrl(image.compressedDataUrl);
-
-      // 將壓縮後的圖片轉換為 Uint8Array
       const imageBuffer = dataUrlToUint8Array(image.compressedDataUrl);
-
-      // 計算保持比例的圖片尺寸
       const { width, height } = calculateAspectRatioDimensions(
         image.width,
         image.height,
@@ -117,18 +135,14 @@ export async function generateDocx(
         maxHeight
       );
 
-      // 計算此圖片（含標題和間距）的總高度
       const totalItemHeight = height + captionHeight + spacing;
 
-      // 智能分頁：如果加上這張圖片會超過頁面高度，且不是第一張圖片，則分頁
       if (currentPageHeight + totalItemHeight > maxPageHeight && i > 0) {
-        // 添加分頁符
         children.push(
           new Paragraph({
             pageBreakBefore: true,
           })
         );
-        // 重置頁面高度
         currentPageHeight = 0;
       }
 
@@ -150,11 +164,15 @@ export async function generateDocx(
         },
       });
 
-      // 建立 Figure 標題段落
+      // 建立標題段落（優先使用自訂說明）
+      const captionText = image.caption?.trim()
+        ? `Figure ${figureNumber} - ${image.caption.trim()}`
+        : `Figure ${figureNumber}`;
+
       const captionParagraph = new Paragraph({
         children: [
           new TextRun({
-            text: `Figure ${figureNumber}`,
+            text: captionText,
             bold: true,
           }),
         ],
@@ -164,23 +182,50 @@ export async function generateDocx(
         },
       });
 
-      // 添加圖片和標題
       children.push(imageParagraph);
       children.push(captionParagraph);
 
-      // 更新當前頁面累計高度
       currentPageHeight += totalItemHeight;
     } catch (error) {
       console.error(`處理圖片 ${figureNumber} 時發生錯誤:`, error);
     }
   }
 
+  // 浮水印 header（如有設定）
+  const headers = watermarkText
+    ? {
+        default: new Header({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: watermarkText,
+                  color: 'CCCCCC',
+                  size: 20,
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        }),
+      }
+    : undefined;
+
   // 建立文件
   const doc = new Document({
     sections: [
       {
-        properties: {},
-        children: children,
+        properties: {
+          page: {
+            size: {
+              width: convertMillimetersToTwip(pageDims.width),
+              height: convertMillimetersToTwip(pageDims.height),
+              orientation: PageOrientation.PORTRAIT,
+            },
+          },
+        },
+        headers,
+        children,
       },
     ],
   });

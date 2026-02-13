@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 操作按鈕組件
- * 提供清空和匯出功能
+ * 提供清空、匯出 DOCX 和匯出 PDF 功能
  */
 defineProps<{
   disabled?: boolean;
@@ -11,6 +11,7 @@ defineProps<{
 const emit = defineEmits<{
   clear: [];
   export: [];
+  exportPdf: [];
 }>();
 </script>
 
@@ -23,6 +24,10 @@ const emit = defineEmits<{
       <span v-if="disabled">⏳ 處理中...</span>
       <span v-else>📥 匯出 DOCX</span>
     </button>
+    <button class="btn btn-pdf" @click="emit('exportPdf')" :disabled="disabled">
+      <span v-if="disabled">⏳ 處理中...</span>
+      <span v-else>📄 匯出 PDF</span>
+    </button>
   </div>
 </template>
 
@@ -31,6 +36,7 @@ const emit = defineEmits<{
   display: flex;
   gap: 1rem;
   justify-content: center;
+  flex-wrap: wrap;
   margin-bottom: 2rem;
 }
 
@@ -70,5 +76,15 @@ const emit = defineEmits<{
 .btn-secondary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(245, 87, 108, 0.4);
+}
+
+.btn-pdf {
+  background: linear-gradient(135deg, #e53935 0%, #ff7043 100%);
+  color: white;
+}
+
+.btn-pdf:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(229, 57, 53, 0.4);
 }
 </style>

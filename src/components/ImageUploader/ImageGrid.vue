@@ -10,10 +10,15 @@ import ImageCard from './ImageCard.vue';
  */
 const props = defineProps<{
   images: UploadedImage[];
+  selectMode?: boolean;
+  selectedIds?: Set<string>;
 }>();
 
 const emit = defineEmits<{
   remove: [id: string];
+  preview: [index: number];
+  toggleSelect: [id: string];
+  updateCaption: [id: string, caption: string];
 }>();
 
 const imageGridRef = ref<HTMLElement | null>(null);
@@ -40,7 +45,12 @@ useImageSortable(imageGridRef, imagesRef as any);
         :key="image.id"
         :image="image"
         :index="index"
+        :select-mode="selectMode"
+        :selected="selectedIds?.has(image.id) ?? false"
         @remove="emit('remove', $event)"
+        @preview="emit('preview', $event)"
+        @toggle-select="emit('toggleSelect', $event)"
+        @update-caption="(id: string, caption: string) => emit('updateCaption', id, caption)"
       />
     </div>
   </div>
