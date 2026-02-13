@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ImageUploader from './components/ImageUploader.vue'
+import ImageUploader from './components/ImageUploader/index.vue'
 </script>
 
 <template>

@@ -60,7 +60,6 @@ export async function compressImage(
         // PNG 轉 JPEG 可大幅減小檔案
         // 但如果原本就是 JPEG 且檔案小於 500KB，保持原格式
         const isPNG = file.type === 'image/png';
-        const isSmallFile = file.size < 500 * 1024; // 小於 500KB
 
         let outputType = 'image/jpeg';
         let outputQuality = quality;
