@@ -90,7 +90,7 @@ export async function generatePdf(
 
       // 繪製圖片（置中）
       const imgX = (pageWidth - imgWidthPt) / 2;
-      pdf.addImage(image.compressedDataUrl, 'JPEG', imgX, currentY, imgWidthPt, imgHeightPt);
+      pdf.addImage(image.compressedDataUrl, 'JPEG', imgX, currentY, imgWidthPt, imgHeightPt, undefined, 'FAST');
       currentY += imgHeightPt + 8;
 
       // 繪製標題
