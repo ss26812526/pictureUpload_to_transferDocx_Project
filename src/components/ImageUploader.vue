@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import Sortable from 'sortablejs';
 import type { UploadedImage, ExportOptions } from '../types';
 import { compressImage, getDataUrlSize, formatFileSize } from '../utils/imageCompressor';
@@ -23,13 +23,19 @@ const exportOptions = ref<ExportOptions>({
 let sortableInstance: Sortable | null = null;
 
 // 初始化拖拽排序
-onMounted(() => {
+function initSortable() {
+  if (sortableInstance) {
+    sortableInstance.destroy();
+    sortableInstance = null;
+  }
+
   if (imageGridRef.value) {
     sortableInstance = Sortable.create(imageGridRef.value, {
       animation: 150,
       ghostClass: 'sortable-ghost',
       chosenClass: 'sortable-chosen',
       dragClass: 'sortable-drag',
+      handle: '.drag-handle', // 只能透過拖拽手柄拖動
       onEnd: (evt: Sortable.SortableEvent) => {
         if (evt.oldIndex !== undefined && evt.newIndex !== undefined) {
           const movedImage = images.value.splice(evt.oldIndex, 1)[0];
@@ -40,7 +46,15 @@ onMounted(() => {
       },
     });
   }
-});
+}
+
+// 監聽圖片數組變化，重新初始化拖拽
+watch(images, async (newImages) => {
+  if (newImages.length > 0) {
+    await nextTick();
+    initSortable();
+  }
+}, { deep: true });
 
 onUnmounted(() => {
   if (sortableInstance) {
@@ -59,15 +73,28 @@ async function handleFileSelect(event: Event) {
 // 處理拖拽上傳
 function handleDragOver(event: DragEvent) {
   event.preventDefault();
+  event.stopPropagation();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'copy';
+  }
   isDragging.value = true;
 }
 
-function handleDragLeave() {
-  isDragging.value = false;
+function handleDragLeave(event: DragEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+  // 只有當離開整個上傳區域時才取消拖拽狀態
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+  const x = event.clientX;
+  const y = event.clientY;
+  if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+    isDragging.value = false;
+  }
 }
 
 async function handleDrop(event: DragEvent) {
   event.preventDefault();
+  event.stopPropagation();
   isDragging.value = false;
 
   if (event.dataTransfer?.files) {
@@ -195,6 +222,7 @@ function triggerFileInput() {
     <div
       class="upload-zone"
       :class="{ dragging: isDragging }"
+      @dragenter.prevent="isDragging = true"
       @dragover="handleDragOver"
       @dragleave="handleDragLeave"
       @drop="handleDrop"
@@ -287,8 +315,14 @@ function triggerFileInput() {
     </div>
 
     <!-- 圖片預覽網格 -->
+    <div v-if="images.length > 0" class="drag-hint">
+      💡 提示：拖拽圖片可調整順序，Figure 編號會自動更新
+    </div>
     <div v-if="images.length > 0" class="image-grid" ref="imageGridRef">
       <div v-for="(image, index) in images" :key="image.id" class="image-card">
+        <div class="drag-handle" title="拖拽以調整順序">
+          <span class="drag-icon">⋮⋮</span>
+        </div>
         <div class="image-wrapper">
           <img :src="image.preview" :alt="`Image ${index + 1}`" />
           <div class="image-overlay">
@@ -507,6 +541,20 @@ function triggerFileInput() {
   margin-top: 0.25rem;
 }
 
+/* 拖拽提示 */
+.drag-hint {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%);
+  border-radius: 12px;
+  color: #f57c00;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 2px solid #ffb300;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+}
+
 /* 圖片網格 */
 .image-grid {
   display: grid;
@@ -518,15 +566,60 @@ function triggerFileInput() {
 .image-card {
   background: white;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  cursor: move;
+  cursor: default;
+  position: relative;
 }
 
 .image-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-card:hover .drag-handle {
+  opacity: 1;
+}
+
+/* 拖拽手柄 */
+.drag-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: grab;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  border: 2px solid white;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.drag-handle:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  transform: scale(1.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+.drag-icon {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -2px;
+  display: block;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .image-wrapper {
@@ -535,6 +628,7 @@ function triggerFileInput() {
   padding-top: 75%;
   overflow: hidden;
   background: #f5f5f5;
+  border-radius: 12px;
 }
 
 .image-wrapper img {
@@ -700,14 +794,29 @@ function triggerFileInput() {
 
 /* Sortable 樣式 */
 .sortable-ghost {
-  opacity: 0.4;
+  opacity: 0.3;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 3px dashed #667eea;
+}
+
+.sortable-ghost * {
+  opacity: 0;
 }
 
 .sortable-chosen {
-  transform: scale(1.05);
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3) !important;
+  z-index: 999;
 }
 
 .sortable-drag {
+  opacity: 0.9;
+  transform: rotate(3deg);
+  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.5);
+}
+
+.sortable-fallback {
   opacity: 0.8;
+  transform: scale(1.05);
 }
 </style>

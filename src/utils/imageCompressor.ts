@@ -34,8 +34,8 @@ export async function compressImage(
 
         if (width > maxWidth || height > maxHeight) {
           const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = width * ratio;
-          height = height * ratio;
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
         }
 
         // 建立 Canvas
@@ -49,10 +49,31 @@ export async function compressImage(
           return;
         }
 
+        // 使用高品質圖片縮放
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
         // 繪製圖片
         ctx.drawImage(img, 0, 0, width, height);
 
-        // 轉換為 Data URL
+        // 判斷最佳輸出格式
+        // PNG 轉 JPEG 可大幅減小檔案
+        // 但如果原本就是 JPEG 且檔案小於 500KB，保持原格式
+        const isPNG = file.type === 'image/png';
+        const isSmallFile = file.size < 500 * 1024; // 小於 500KB
+
+        let outputType = 'image/jpeg';
+        let outputQuality = quality;
+
+        // 特殊處理：小 PNG 圖片可能是圖標或截圖，嘗試 JPEG
+        if (isPNG) {
+          outputType = 'image/jpeg';
+          outputQuality = 0.9; // PNG 轉 JPEG 用較高品質
+        } else if (file.type === 'image/jpeg') {
+          outputType = 'image/jpeg';
+        }
+
+        // 轉換為 Blob 並比較大小
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -60,15 +81,27 @@ export async function compressImage(
               return;
             }
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              resolve(reader.result as string);
+            // 如果壓縮後反而變大，使用原始檔案
+            if (blob.size >= file.size) {
+              const originalReader = new FileReader();
+              originalReader.onloadend = () => {
+                resolve(originalReader.result as string);
+              };
+              originalReader.onerror = reject;
+              originalReader.readAsDataURL(file);
+              return;
+            }
+
+            // 使用壓縮後的檔案
+            const compressedReader = new FileReader();
+            compressedReader.onloadend = () => {
+              resolve(compressedReader.result as string);
             };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
+            compressedReader.onerror = reject;
+            compressedReader.readAsDataURL(blob);
           },
-          file.type || 'image/jpeg',
-          quality
+          outputType,
+          outputQuality
         );
       };
 
