@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { UploadedImage } from '../../types';
 import { useImageSortable } from '../../composables/useImageSortable';
 import ImageCard from './ImageCard.vue';
+import { useI18n } from '../../i18n';
 
 /**
  * 圖片網格組件
@@ -21,6 +22,7 @@ const emit = defineEmits<{
   updateCaption: [id: string, caption: string];
 }>();
 
+const { t } = useI18n();
 const imageGridRef = ref<HTMLElement | null>(null);
 
 // 使用拖拽排序 composable
@@ -38,7 +40,7 @@ useImageSortable(imageGridRef, imagesRef as any);
 
 <template>
   <div v-if="images.length > 0">
-    <div class="drag-hint">💡 提示:拖拽圖片可調整順序,Figure 編號會自動更新</div>
+    <div class="drag-hint">{{ t('grid.dragHint') }}</div>
     <div class="image-grid" ref="imageGridRef">
       <ImageCard
         v-for="(image, index) in images"

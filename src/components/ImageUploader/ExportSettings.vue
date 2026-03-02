@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ExportOptions } from '../../types';
+import { useI18n } from '../../i18n';
 
 /**
  * 匯出設定表單組件
@@ -7,18 +8,19 @@ import type { ExportOptions } from '../../types';
  * 包含頁面尺寸、浮水印等設定
  */
 const modelValue = defineModel<ExportOptions>({ required: true });
+const { t } = useI18n();
 </script>
 
 <template>
   <div class="export-settings">
-    <h3>⚙️ 匯出設定</h3>
+    <h3>{{ t('settings.title') }}</h3>
 
     <!-- 圖片設定 -->
     <div class="settings-section">
-      <h4>圖片設定</h4>
+      <h4>{{ t('settings.imageSettings') }}</h4>
       <div class="settings-grid">
         <div class="setting-item">
-          <label>圖片最大寬度 (px):</label>
+          <label>{{ t('settings.maxWidth') }}</label>
           <input
             v-model.number="modelValue.maxWidth"
             type="number"
@@ -28,7 +30,7 @@ const modelValue = defineModel<ExportOptions>({ required: true });
           />
         </div>
         <div class="setting-item">
-          <label>圖片最大高度 (px):</label>
+          <label>{{ t('settings.maxHeight') }}</label>
           <input
             v-model.number="modelValue.maxHeight"
             type="number"
@@ -38,7 +40,7 @@ const modelValue = defineModel<ExportOptions>({ required: true });
           />
         </div>
         <div class="setting-item">
-          <label>壓縮品質:</label>
+          <label>{{ t('settings.quality') }}</label>
           <input
             v-model.number="modelValue.quality"
             type="range"
@@ -53,19 +55,19 @@ const modelValue = defineModel<ExportOptions>({ required: true });
 
     <!-- 頁面設定 -->
     <div class="settings-section">
-      <h4>頁面設定</h4>
+      <h4>{{ t('settings.pageSettings') }}</h4>
       <div class="settings-grid">
         <div class="setting-item">
-          <label>頁面尺寸:</label>
+          <label>{{ t('settings.pageSize') }}</label>
           <select v-model="modelValue.pageSize">
-            <option value="A4">A4 (210 × 297 mm)</option>
-            <option value="Letter">Letter (216 × 279 mm)</option>
-            <option value="custom">自訂尺寸</option>
+            <option value="A4">{{ t('settings.pageSizeA4') }}</option>
+            <option value="Letter">{{ t('settings.pageSizeLetter') }}</option>
+            <option value="custom">{{ t('settings.pageSizeCustom') }}</option>
           </select>
         </div>
         <template v-if="modelValue.pageSize === 'custom'">
           <div class="setting-item">
-            <label>頁面寬度 (mm):</label>
+            <label>{{ t('settings.pageWidth') }}</label>
             <input
               v-model.number="modelValue.customPageWidth"
               type="number"
@@ -75,7 +77,7 @@ const modelValue = defineModel<ExportOptions>({ required: true });
             />
           </div>
           <div class="setting-item">
-            <label>頁面高度 (mm):</label>
+            <label>{{ t('settings.pageHeight') }}</label>
             <input
               v-model.number="modelValue.customPageHeight"
               type="number"
@@ -86,7 +88,7 @@ const modelValue = defineModel<ExportOptions>({ required: true });
           </div>
         </template>
         <div class="setting-item">
-          <label>每頁累計高度 (px):</label>
+          <label>{{ t('settings.maxPageHeight') }}</label>
           <input
             v-model.number="modelValue.maxPageHeight"
             type="number"
@@ -100,14 +102,14 @@ const modelValue = defineModel<ExportOptions>({ required: true });
 
     <!-- 浮水印設定 -->
     <div class="settings-section">
-      <h4>浮水印</h4>
+      <h4>{{ t('settings.watermark') }}</h4>
       <div class="settings-grid">
         <div class="setting-item wide">
-          <label>浮水印文字 (留空則不加):</label>
+          <label>{{ t('settings.watermarkText') }}</label>
           <input
             v-model="modelValue.watermarkText"
             type="text"
-            placeholder="例如: CONFIDENTIAL、公司名稱..."
+            :placeholder="t('settings.watermarkPlaceholder')"
             maxlength="50"
           />
         </div>

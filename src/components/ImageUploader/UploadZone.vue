@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useToast } from '../../composables/useToast';
+import { useI18n } from '../../i18n';
 
 /**
  * 上傳區域組件
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const { t } = useI18n();
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isDragging = ref(false);
 
@@ -82,7 +84,7 @@ function handlePaste(event: ClipboardEvent) {
   if (imageFiles.length > 0) {
     event.preventDefault();
     emit('upload', imageFiles);
-    toast.success(`已從剪貼簿貼上 ${imageFiles.length} 張圖片`);
+    toast.success(t('upload.pastedCount').replace('{count}', String(imageFiles.length)));
   }
 }
 
@@ -116,8 +118,8 @@ onUnmounted(() => {
     />
     <div class="upload-content">
       <div class="upload-icon">📁</div>
-      <p class="upload-text">點擊或拖拽圖片到此處上傳</p>
-      <p class="upload-hint">支援 JPG、PNG、GIF 等格式，也可使用 Ctrl+V 貼上截圖</p>
+      <p class="upload-text">{{ t('upload.dropzone') }}</p>
+      <p class="upload-hint">{{ t('upload.hint') }}</p>
     </div>
   </div>
 </template>

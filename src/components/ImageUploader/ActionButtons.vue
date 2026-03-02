@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from '../../i18n';
+
 /**
  * 操作按鈕組件
  * 提供清空、匯出 DOCX 和匯出 PDF 功能
@@ -7,6 +9,8 @@ defineProps<{
   disabled?: boolean;
   imageCount: number;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   clear: [];
@@ -18,15 +22,15 @@ const emit = defineEmits<{
 <template>
   <div v-if="imageCount > 0" class="actions">
     <button class="btn btn-secondary" @click="emit('clear')" :disabled="disabled">
-      🗑️ 清空所有圖片
+      {{ t('actions.clearAll') }}
     </button>
     <button class="btn btn-primary" @click="emit('export')" :disabled="disabled">
-      <span v-if="disabled">⏳ 處理中...</span>
-      <span v-else>📥 匯出 DOCX</span>
+      <span v-if="disabled">{{ t('actions.processing') }}</span>
+      <span v-else>{{ t('actions.exportDocx') }}</span>
     </button>
     <button class="btn btn-pdf" @click="emit('exportPdf')" :disabled="disabled">
-      <span v-if="disabled">⏳ 處理中...</span>
-      <span v-else>📄 匯出 PDF</span>
+      <span v-if="disabled">{{ t('actions.processing') }}</span>
+      <span v-else>{{ t('actions.exportPdf') }}</span>
     </button>
   </div>
 </template>

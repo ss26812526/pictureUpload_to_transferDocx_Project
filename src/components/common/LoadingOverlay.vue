@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from '../../i18n';
+
 /**
  * 通用載入遮罩組件
  * 可重用於任何需要顯示載入狀態的場景
@@ -7,13 +9,15 @@ defineProps<{
   show: boolean;
   message?: string;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
   <Transition name="fade">
     <div v-if="show" class="loading-overlay">
       <div class="spinner"></div>
-      <p>{{ message || '處理中,請稍候...' }}</p>
+      <p>{{ message || t('loading.default') }}</p>
     </div>
   </Transition>
 </template>

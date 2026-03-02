@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { UploadedImage } from '../../types';
 import { formatFileSize } from '../../utils/imageCompressor';
+import { useI18n } from '../../i18n';
 
 /**
  * 統計資訊面板組件
@@ -9,6 +10,8 @@ import { formatFileSize } from '../../utils/imageCompressor';
 const props = defineProps<{
   images: UploadedImage[];
 }>();
+
+const { t } = useI18n();
 
 // 計算總檔案大小
 function getTotalSize() {
@@ -21,19 +24,19 @@ function getTotalSize() {
 <template>
   <div v-if="images.length > 0" class="stats">
     <div class="stat-item">
-      <span class="stat-label">已上傳圖片:</span>
-      <span class="stat-value">{{ images.length }} 張</span>
+      <span class="stat-label">{{ t('stats.uploaded') }}</span>
+      <span class="stat-value">{{ t('stats.count').replace('{count}', String(images.length)) }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">原始大小:</span>
+      <span class="stat-label">{{ t('stats.originalSize') }}</span>
       <span class="stat-value">{{ formatFileSize(getTotalSize().original) }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">壓縮後:</span>
+      <span class="stat-label">{{ t('stats.compressedSize') }}</span>
       <span class="stat-value compressed">{{ formatFileSize(getTotalSize().compressed) }}</span>
     </div>
     <div class="stat-item">
-      <span class="stat-label">節省:</span>
+      <span class="stat-label">{{ t('stats.saved') }}</span>
       <span class="stat-value savings">
         {{ Math.round((1 - getTotalSize().compressed / getTotalSize().original) * 100) }}%
       </span>

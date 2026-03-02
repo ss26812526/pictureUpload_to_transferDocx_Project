@@ -3,6 +3,7 @@ import type { UploadedImage, ExportOptions } from '../types';
 import { generateDocx } from '../utils/docxGenerator';
 import { generatePdf } from '../utils/pdfGenerator';
 import { useToast } from './useToast';
+import { useI18n } from '../i18n';
 
 /**
  * 匯出的組合式函數
@@ -11,6 +12,7 @@ import { useToast } from './useToast';
 export function useImageExport() {
   const isExporting = ref(false);
   const toast = useToast();
+  const { t } = useI18n();
 
   /**
    * 匯出為 DOCX 文件
@@ -20,7 +22,7 @@ export function useImageExport() {
     options: ExportOptions
   ): Promise<void> {
     if (images.length === 0) {
-      toast.warning('請先上傳圖片');
+      toast.warning(t('toast.uploadFirst'));
       return;
     }
 
@@ -28,10 +30,10 @@ export function useImageExport() {
 
     try {
       await generateDocx(images, options);
-      toast.success(`已成功匯出 ${images.length} 張圖片為 DOCX`);
+      toast.success(t('toast.exportDocxSuccess').replace('{count}', String(images.length)));
     } catch (error) {
-      console.error('匯出 DOCX 時發生錯誤:', error);
-      toast.error('匯出 DOCX 失敗，請稍後再試');
+      console.error('DOCX export error:', error);
+      toast.error(t('toast.exportDocxFail'));
     } finally {
       isExporting.value = false;
     }
@@ -45,7 +47,7 @@ export function useImageExport() {
     options: ExportOptions
   ): Promise<void> {
     if (images.length === 0) {
-      toast.warning('請先上傳圖片');
+      toast.warning(t('toast.uploadFirst'));
       return;
     }
 
@@ -53,10 +55,10 @@ export function useImageExport() {
 
     try {
       await generatePdf(images, options);
-      toast.success(`已成功匯出 ${images.length} 張圖片為 PDF`);
+      toast.success(t('toast.exportPdfSuccess').replace('{count}', String(images.length)));
     } catch (error) {
-      console.error('匯出 PDF 時發生錯誤:', error);
-      toast.error('匯出 PDF 失敗，請稍後再試');
+      console.error('PDF export error:', error);
+      toast.error(t('toast.exportPdfFail'));
     } finally {
       isExporting.value = false;
     }

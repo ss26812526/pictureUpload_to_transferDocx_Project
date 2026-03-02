@@ -81,6 +81,9 @@ export const zhTW = {
     noUndo: '沒有可撤銷的操作',
     noRedo: '沒有可重做的操作',
   },
+  loading: {
+    default: '處理中，請稍候...',
+  },
   lightbox: {
     close: '關閉 (ESC)',
     prev: '上一張 (←)',

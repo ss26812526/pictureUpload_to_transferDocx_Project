@@ -4,6 +4,7 @@ import type { UploadedImage, ExportOptions } from '../types';
 import { getDataUrlSize } from '../utils/imageCompressor';
 import { compressImageWithWorker } from '../composables/useWorkerCompress';
 import { useToast } from '../composables/useToast';
+import { useI18n } from '../i18n';
 
 /**
  * 圖片管理 Pinia Store
@@ -11,6 +12,7 @@ import { useToast } from '../composables/useToast';
  */
 export const useImageStore = defineStore('images', () => {
   const toast = useToast();
+  const { t } = useI18n();
 
   // ===== 核心狀態 =====
   const images = ref<UploadedImage[]>([]);
@@ -31,23 +33,23 @@ export const useImageStore = defineStore('images', () => {
   function undo() {
     const snapshot = undoStack.value.pop();
     if (!snapshot) {
-      toast.info('沒有可撤銷的操作');
+      toast.info(t('toast.noUndo'));
       return;
     }
     redoStack.value.push(JSON.parse(JSON.stringify(images.value)));
     images.value.splice(0, images.value.length, ...snapshot);
-    toast.info('已撤銷');
+    toast.info(t('toast.undone'));
   }
 
   function redo() {
     const snapshot = redoStack.value.pop();
     if (!snapshot) {
-      toast.info('沒有可重做的操作');
+      toast.info(t('toast.noRedo'));
       return;
     }
     undoStack.value.push(JSON.parse(JSON.stringify(images.value)));
     images.value.splice(0, images.value.length, ...snapshot);
-    toast.info('已重做');
+    toast.info(t('toast.redone'));
   }
 
   // ===== 批次選取 =====
@@ -80,7 +82,7 @@ export const useImageStore = defineStore('images', () => {
 
   function batchRemove() {
     if (selectedIds.value.size === 0) {
-      toast.warning('請先選取要刪除的圖片');
+      toast.warning(t('toast.selectFirst'));
       return;
     }
     const count = selectedIds.value.size;
@@ -94,7 +96,7 @@ export const useImageStore = defineStore('images', () => {
       }
     });
     selectedIds.value.clear();
-    toast.success(`已批次刪除 ${count} 張圖片`);
+    toast.success(t('toast.batchDeletedCount').replace('{count}', String(count)));
   }
 
   // ===== 圖片操作 =====
@@ -104,7 +106,7 @@ export const useImageStore = defineStore('images', () => {
     const imageFiles = files.filter((file) => file.type.startsWith('image/'));
 
     if (imageFiles.length === 0) {
-      toast.warning('未偵測到圖片檔案，請選擇圖片格式的檔案');
+      toast.warning(t('upload.noImages'));
       isProcessing.value = false;
       return;
     }
@@ -131,11 +133,11 @@ export const useImageStore = defineStore('images', () => {
         });
       } catch (error) {
         console.error('處理圖片時發生錯誤:', error);
-        toast.error(`處理圖片「${file.name}」時發生錯誤`);
+        toast.error(t('upload.errorFile').replace('{name}', file.name));
       }
     }
 
-    toast.success(`已成功上傳 ${imageFiles.length} 張圖片`);
+    toast.success(t('upload.successCount').replace('{count}', String(imageFiles.length)));
     isProcessing.value = false;
   }
 
@@ -157,7 +159,7 @@ export const useImageStore = defineStore('images', () => {
       images.value.splice(index, 1);
     }
     selectedIds.value.delete(id);
-    toast.info('已刪除圖片');
+    toast.info(t('toast.deleted'));
   }
 
   function clearAll() {
@@ -166,7 +168,7 @@ export const useImageStore = defineStore('images', () => {
     images.value.forEach((img) => URL.revokeObjectURL(img.preview));
     images.value = [];
     selectedIds.value.clear();
-    toast.success(`已清空 ${count} 張圖片`);
+    toast.success(t('toast.clearedCount').replace('{count}', String(count)));
   }
 
   function updateCaption(id: string, caption: string) {

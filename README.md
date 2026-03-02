@@ -112,7 +112,11 @@ npm run build
 
 ### Test
 ```bash
+# Watch mode (during development)
 npm run test
+
+# Run once
+npm run test:run
 ```
 
 ### Usage
@@ -238,7 +242,11 @@ npm run build
 
 ### 測試
 ```bash
+# 監聽模式（開發時使用）
 npm run test
+
+# 單次執行
+npm run test:run
 ```
 
 ### 使用方式

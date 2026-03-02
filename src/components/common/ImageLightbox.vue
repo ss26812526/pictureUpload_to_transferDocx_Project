@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useI18n } from '../../i18n';
+
 /**
  * 圖片 Lightbox 元件
  * 點擊圖片放大預覽，支援鍵盤左右切換和 ESC 關閉
@@ -15,6 +17,8 @@ const emit = defineEmits<{
   prev: [];
   next: [];
 }>();
+
+const { t } = useI18n();
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close');
@@ -35,21 +39,21 @@ function handleKeydown(e: KeyboardEvent) {
         ref="overlayRef"
       >
         <!-- 關閉按鈕 -->
-        <button class="lightbox-close" @click="emit('close')" title="關閉 (ESC)">✕</button>
+        <button class="lightbox-close" @click="emit('close')" :title="t('lightbox.close')">✕</button>
 
         <!-- 上一張 -->
         <button
           v-if="total && total > 1"
           class="lightbox-nav lightbox-prev"
           @click.stop="emit('prev')"
-          title="上一張 (←)"
+          :title="t('lightbox.prev')"
         >
           ‹
         </button>
 
         <!-- 圖片 -->
         <div class="lightbox-content" @click.stop>
-          <img :src="src" :alt="alt || '預覽圖片'" class="lightbox-image" />
+          <img :src="src" :alt="alt || 'preview'" class="lightbox-image" />
           <div v-if="total && total > 1" class="lightbox-counter">
             {{ (currentIndex ?? 0) + 1 }} / {{ total }}
           </div>
@@ -60,7 +64,7 @@ function handleKeydown(e: KeyboardEvent) {
           v-if="total && total > 1"
           class="lightbox-nav lightbox-next"
           @click.stop="emit('next')"
-          title="下一張 (→)"
+          :title="t('lightbox.next')"
         >
           ›
         </button>

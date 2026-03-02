@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { UploadedImage } from '../../types';
 import { formatFileSize } from '../../utils/imageCompressor';
+import { useI18n } from '../../i18n';
 
 /**
  * 單張圖片卡片組件
@@ -21,6 +22,8 @@ const emit = defineEmits<{
   updateCaption: [id: string, caption: string];
 }>();
 
+const { t } = useI18n();
+
 function handleCardClick() {
   if (props.selectMode) {
     emit('toggleSelect', props.image.id);
@@ -39,18 +42,18 @@ function handleCardClick() {
       <span v-if="selected">✓</span>
     </div>
 
-    <div class="drag-handle" title="拖拽以調整順序">
+    <div class="drag-handle" :title="t('imageCard.dragToSort')">
       <span class="drag-icon">⋮⋮</span>
     </div>
     <div
       class="image-wrapper"
       @click.stop="!selectMode && emit('preview', index)"
-      :title="selectMode ? '點擊選取' : '點擊預覽大圖'"
+      :title="selectMode ? t('imageCard.clickSelect') : t('imageCard.clickPreview')"
     >
       <img :src="image.preview" :alt="`Image ${index + 1}`" />
       <div v-if="!selectMode" class="image-overlay">
         <span class="preview-icon">🔍</span>
-        <button class="remove-btn" @click.stop="emit('remove', image.id)" title="刪除">❌</button>
+        <button class="remove-btn" @click.stop="emit('remove', image.id)" :title="t('imageCard.delete')">❌</button>
       </div>
     </div>
     <div class="image-info">
@@ -64,7 +67,7 @@ function handleCardClick() {
         :value="image.caption || ''"
         @input="emit('updateCaption', image.id, ($event.target as HTMLInputElement).value)"
         @click.stop
-        placeholder="輸入圖片說明..."
+        :placeholder="t('imageCard.captionPlaceholder')"
       />
     </div>
   </div>

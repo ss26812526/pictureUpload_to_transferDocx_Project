@@ -81,6 +81,9 @@ export const en = {
     noUndo: 'Nothing to undo',
     noRedo: 'Nothing to redo',
   },
+  loading: {
+    default: 'Processing, please wait...',
+  },
   lightbox: {
     close: 'Close (ESC)',
     prev: 'Previous (←)',
